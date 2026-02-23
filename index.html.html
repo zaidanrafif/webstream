@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<!-- ══════════════════════════════════════════════════════════════
+     GANTI NAMA WEBSITE — ubah "StreamTube" di DUA tempat:
+     1. <title> di bawah ini        = judul tab browser
+     2. Logo di <nav> (cari logo)   = teks di navbar
+     ══════════════════════════════════════════════════════════════ -->
+<title>StreamTube</title>
+
+<!-- Favicon ▶ merah-hitam, tidak perlu file eksternal -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='13' fill='%23111111'/%3E%3Crect x='1' y='1' width='62' height='62' rx='12' fill='none' stroke='%23cc0000' stroke-width='2' opacity='.5'/%3E%3Cpolygon points='22,14 22,50 50,32' fill='url(%23p)'/%3E%3Cdefs%3E%3ClinearGradient id='p' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23ff2200'/%3E%3Cstop offset='1' stop-color='%23880000'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E">
+
+<style>
+/* ── RESET & BASE ── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a0a;color:#f0f0f0;font-family:Arial,sans-serif;min-height:100vh}
+
+/* ── NAVBAR ── */
+nav{
+  background:#111;
+  border-bottom:2px solid #c00;
+  padding:11px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;top:0;z-index:20;
+  gap:8px;
+}
+/* GANTI NAMA LOGO: ubah "Stream" dan "Tube" di tag .logo di bawah */
+.logo{font-size:1.2rem;font-weight:900;color:#c00;letter-spacing:-1px;white-space:nowrap}
+.logo span{color:#f0f0f0}
+.nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.back-btn{
+  background:#1c1c1c;color:#f0f0f0;
+  border:1px solid #2e2e2e;border-radius:5px;
+  padding:6px 11px;font-size:0.78rem;font-weight:700;
+  cursor:pointer;display:none;align-items:center;gap:4px;
+  white-space:nowrap;
+}
+.back-btn:hover{background:#2a2a2a}
+.back-btn.show{display:flex}
+/* Ganti href & teks tombol ini sesuai kebutuhan */
+.nav-link{
+  background:#c00;color:#fff;
+  border:none;border-radius:5px;
+  padding:7px 13px;font-size:0.78rem;font-weight:700;
+  cursor:pointer;text-decoration:none;
+  white-space:nowrap;
+}
+.nav-link:hover{opacity:0.8}
+
+/* ── LAYOUT ── */
+.wrap{max-width:1100px;margin:0 auto;padding:16px}
+.grid{
+  display:grid;
+  grid-template-columns:1fr 300px;
+  gap:20px;
+}
+@media(max-width:720px){
+  .grid{grid-template-columns:1fr}
+}
+
+/* ── PLAYER ── */
+.player-wrap{
+  width:100%;aspect-ratio:16/9;
+  background:#000;border-radius:8px;overflow:hidden;
+}
+.player-wrap video{width:100%;height:100%;object-fit:contain;display:block}
+.v-title{margin-top:12px;font-size:1.05rem;font-weight:700;line-height:1.4}
+.v-desc{margin-top:6px;font-size:0.82rem;color:#888;line-height:1.6}
+.v-meta{margin-top:4px;font-size:0.74rem;color:#555}
+
+/* ── HISTORY ── */
+.hist-section{margin-top:24px}
+.section-label{
+  font-size:0.72rem;font-weight:700;color:#555;
+  text-transform:uppercase;letter-spacing:1px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding-bottom:8px;border-bottom:1px solid #1c1c1c;
+  margin-bottom:10px;
+}
+.clear-btn{font-size:0.7rem;color:#444;background:none;border:none;cursor:pointer;padding:0}
+.clear-btn:hover{color:#c00}
+
+.hist-scroll{
+  display:flex;gap:10px;
+  overflow-x:auto;
+  padding-bottom:8px;
+  scrollbar-width:thin;
+  scrollbar-color:#2a2a2a transparent;
+  -webkit-overflow-scrolling:touch;
+}
+.hist-scroll::-webkit-scrollbar{height:4px}
+.hist-scroll::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:2px}
+
+.hcard{
+  min-width:120px;max-width:120px;
+  cursor:pointer;border-radius:6px;
+  overflow:hidden;
+  border:1px solid transparent;
+  flex-shrink:0;
+  transition:border-color 0.12s;
+  background:#141414;
+}
+.hcard:hover{border-color:#c00}
+.hthumb{
+  width:100%;aspect-ratio:16/9;
+  background:#1a1a1a;overflow:hidden;
+}
+.hthumb-img{width:100%;height:100%;object-fit:cover;display:block}
+.htitle{
+  font-size:0.7rem;font-weight:600;
+  padding:5px 6px 6px;line-height:1.3;
+  color:#ccc;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.hist-empty{font-size:0.78rem;color:#2e2e2e;padding:4px 0}
+
+/* ── SIDEBAR ── */
+.sidebar-label{
+  font-size:0.72rem;font-weight:700;color:#c00;
+  text-transform:uppercase;letter-spacing:1px;
+  margin-bottom:10px;padding-bottom:8px;
+  border-bottom:1px solid #1c1c1c;
+}
+.card{
+  display:flex;gap:10px;cursor:pointer;
+  padding:8px;border-radius:6px;margin-bottom:6px;
+  border:1px solid transparent;
+  transition:background 0.12s;
+}
+.card:hover{background:#161616}
+.card.active{border-color:#c00;background:#180000}
+.thumb{
+  width:108px;min-width:108px;
+  aspect-ratio:16/9;
+  background:#1a1a1a;border-radius:5px;overflow:hidden;
+}
+.thumb-img{width:100%;height:100%;object-fit:cover;display:block}
+.ct{
+  font-size:0.8rem;font-weight:600;line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden;
+}
+.cs{font-size:0.7rem;color:#555;margin-top:3px}
+</style>
+</head>
+<body>
+
+<nav>
+  <!-- GANTI NAMA LOGO: ubah teks "Stream" dan "Tube" di sini -->
+  <div class="logo">Stream<span>Tube</span></div>
+  <div class="nav-right">
+    <button class="back-btn" id="backBtn" onclick="goBack()">← Back</button>
+    <!-- Ganti href = link tujuan | ganti teks "Video Lainnya →" sesuai kebutuhan -->
+    <a class="nav-link" href="https://www.google.com" target="_blank">Video Lainnya →</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="grid">
+
+    <!-- KOLOM KIRI: PLAYER + INFO + HISTORY -->
+    <div>
+      <div class="player-wrap">
+        <video id="vid" controls playsinline webkit-playsinline
+               preload="metadata" controlslist="nodownload"
+               disablepictureinpicture></video>
+      </div>
+      <div class="v-title" id="vTitle"></div>
+      <div class="v-desc"  id="vDesc"></div>
+      <div class="v-meta"  id="vMeta"></div>
+
+      <!-- RIWAYAT TONTONAN -->
+      <div class="hist-section">
+        <div class="section-label">
+          <span>Riwayat Tontonan</span>
+          <button class="clear-btn" onclick="clearHistory()">Hapus semua</button>
+        </div>
+        <div class="hist-scroll" id="histList">
+          <span class="hist-empty">Belum ada riwayat</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KOLOM KANAN: SIDEBAR -->
+    <div>
+      <div class="sidebar-label">Video Lainnya</div>
+      <div id="sideList"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ================================================================
+// DAFTAR VIDEO — edit src, title, desc, meta sesuai video kamu
+// src: "videos/ep1.mp4"  atau  "https://domain.com/video.mp4"
+// ================================================================
+const VIDEOS = [
+  {
+    id   : 0,
+    title: "SpongeBob SquarePants – Band Geeks",
+    desc : "SpongeBob berusaha membantu Squidward membentuk band untuk tampil di acara besar. Episode legendaris yang paling dicintai fans sepanjang masa!",
+    meta : "Nickelodeon · Season 2 · Episode 15",
+    src  : "bahan_video/1.SpongeBob_SquarePants_Gelandangan_Nickelodeon_Bahasa_720p.mp4"   // ← GANTI
+  },
+  {
+    id   : 1,
+    title: "SpongeBob – Jellyfishing",
+    desc : "SpongeBob dan Patrick mengajak Squidward yang baru saja keluar dari rumah sakit untuk pergi jellyfishing. Episode penuh tawa!",
+    meta : "Nickelodeon · Season 1 · Episode 3",
+    src  : "bahan_video/2.SpongeBob_SquarePants_Kue_keberuntungan_Nickelodeon_Bahasa_720p.mp4"     // ← GANTI
+  },
+  {
+    id   : 2,
+    title: "SpongeBob – Chocolate with Nuts",
+    desc : "SpongeBob dan Patrick mencoba berjualan cokelat keliling kota Bikini Bottom. Penuh momen ikonik yang tak terlupakan.",
+    meta : "Nickelodeon · Season 3 · Episode 11",
+    src  : "bahan_video/3.Klub_orang_orang_bodoh_Spongebob_Squarepants_episode_terbaru_bahasa_Indonesia_720P (1).mp4"   // ← GANTI
+  },
+  {
+    id   : 3,
+    title: "Patrick Star – Funniest Moments",
+    desc : "Kumpulan momen paling lucu Patrick Star dari berbagai episode. Dijamin ngakak nonton ini!",
+    meta : "Nickelodeon · Compilation",
+    src  : "bahan_video/4.SpongeBob_EPISODE_5_MENIT_Klona_SpongeBob_Nickelodeon_Bahasa_240P.mp4"     // ← GANTI
+  },
+  {
+    id   : 4,
+    title: "SpongeBob – Nasty Patty",
+    desc : "SpongeBob dan Mr. Krabs tidak sengaja membuat Krabby Patty yang mereka kira beracun. Petualangan kocak pun dimulai!",
+    meta : "Nickelodeon · Season 3 · Episode 1",
+    src  : "bahan_video/5.SpongeBob_SpongeBob_Merusak_Cuti_Sakit_Squidward_Nickelodeon_Bahasa_240P.mp4"   // ← GANTI
+  },
+  {
+    id   : 5,
+    title: "Squidward – Funniest Moments",
+    desc : "Momen-momen paling epik Squidward Tentacles yang selalu gagal tapi selalu menghibur. Favorit semua orang!",
+    meta : "Nickelodeon · Compilation",
+    src  : "bahan_video/6.SpongeBob_SquarePants_Squidward_yang_tak_terkalahkan_Nickelodeon_Bahasa_480P.mp4"     // ← GANTI
+  }
+];
+
+// ================================================================
+// VIDEO PERTAMA yang otomatis diputar saat website dibuka (pakai id)
+// ================================================================
+const START_ID = 0;
+// ================================================================
+
+const vid       = document.getElementById('vid');
+const histList  = document.getElementById('histList');
+const backBtn   = document.getElementById('backBtn');
+
+let curId       = null;
+let backStack   = [];        // stack id untuk tombol ← Back
+let historyIds  = [];        // urutan riwayat (terbaru di depan), no-dup
+
+// ── PLAY ──────────────────────────────────────────────────────────
+function playById(id, pushHistory) {
+  const v = VIDEOS.find(x => x.id === id);
+  if (!v) return;
+
+  // Simpan video lama ke back-stack
+  if (pushHistory && curId !== null && curId !== id) {
+    backStack.push(curId);
+  }
+
+  // Tambahkan ke riwayat (hapus duplikat lama dulu)
+  if (curId !== null) {
+    historyIds = historyIds.filter(x => x !== curId);
+    historyIds.unshift(curId);
+  }
+
+  curId = id;
+
+  // Update player
+  vid.src = v.src;
+  vid.load();
+  vid.play().catch(() => {});
+
+  // Update info
+  document.getElementById('vTitle').textContent = v.title;
+  document.getElementById('vDesc').textContent  = v.desc || '';
+  document.getElementById('vMeta').textContent  = v.meta || '';
+
+  backBtn.classList.toggle('show', backStack.length > 0);
+  renderHistory();
+  renderSide();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+// ── BACK ──────────────────────────────────────────────────────────
+function goBack() {
+  if (!backStack.length) return;
+  const prev = backStack.pop();
+  // Jangan push lagi ke backStack saat back
+  const savedCur = curId;
+  curId = null;
+  playById(prev, false);
+  // Kalau mau bisa forward lagi, push curId ke stack
+  // (opsional — komentar baris berikut kalau tidak mau)
+  // backStack.push(savedCur);
+  backBtn.classList.toggle('show', backStack.length > 0);
+}
+
+// ── THUMBNAIL CACHE (canvas snapshot) ────────────────────────────
+const thumbCache = {}; // id → dataURL
+
+function getThumb(v, cb) {
+  // Jika sudah ada di cache, langsung pakai
+  if (thumbCache[v.id]) { cb(thumbCache[v.id]); return; }
+  // Jika ada field thumb manual di VIDEOS, pakai itu
+  if (v.thumb) { thumbCache[v.id] = v.thumb; cb(v.thumb); return; }
+
+  // Generate via canvas
+  const tmpVid = document.createElement('video');
+  tmpVid.src          = v.src;
+  tmpVid.muted        = true;
+  tmpVid.playsInline  = true;
+  tmpVid.preload      = 'metadata';
+  tmpVid.crossOrigin  = 'anonymous';
+  tmpVid.currentTime  = 3; // ambil frame detik ke-3
+
+  const done = () => {
+    try {
+      const c = document.createElement('canvas');
+      c.width  = 320; c.height = 180;
+      c.getContext('2d').drawImage(tmpVid, 0, 0, 320, 180);
+      const url = c.toDataURL('image/jpeg', 0.7);
+      thumbCache[v.id] = url;
+      cb(url);
+    } catch(e) {
+      thumbCache[v.id] = ''; // gagal (CORS dll), pakai placeholder
+      cb('');
+    }
+    tmpVid.remove();
+  };
+
+  tmpVid.addEventListener('seeked',     done, {once:true});
+  tmpVid.addEventListener('error',      ()=>{ thumbCache[v.id]=''; cb(''); tmpVid.remove(); }, {once:true});
+  tmpVid.addEventListener('loadeddata', ()=>{ tmpVid.currentTime = 3; }, {once:true});
+  document.body.appendChild(tmpVid);
+  tmpVid.load();
+}
+
+// Placeholder SVG kalau thumbnail gagal load
+const PLACEHOLDER = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9'%3E%3Crect width='16' height='9' fill='%231a1a1a'/%3E%3Cpolygon points='6,2.5 6,6.5 11,4.5' fill='%23cc0000' opacity='.6'/%3E%3C/svg%3E`;
+
+function thumbImg(url, cls) {
+  return `<img class="${cls}" src="${url || PLACEHOLDER}" onerror="this.src='${PLACEHOLDER}'" loading="lazy">`;
+}
+
+// ── RENDER SIDEBAR ────────────────────────────────────────────────
+function renderSide() {
+  const others = VIDEOS.filter(v => v.id !== curId);
+  const el = document.getElementById('sideList');
+  el.innerHTML = others.map(v => `
+    <div class="card" onclick="playById(${v.id}, true)" id="card-${v.id}">
+      <div class="thumb">
+        ${thumbImg(thumbCache[v.id], 'thumb-img')}
+      </div>
+      <div>
+        <div class="ct">${v.title}</div>
+        <div class="cs">${v.meta || ''}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Load thumbnails async
+  others.forEach(v => {
+    if (thumbCache[v.id] !== undefined) return;
+    getThumb(v, url => {
+      const img = el.querySelector(`#card-${v.id} .thumb-img`);
+      if (img) img.src = url || PLACEHOLDER;
+    });
+  });
+}
+
+// ── RENDER HISTORY ────────────────────────────────────────────────
+function renderHistory() {
+  if (!historyIds.length) {
+    histList.innerHTML = '<span class="hist-empty">Belum ada riwayat</span>';
+    return;
+  }
+  histList.innerHTML = historyIds.map(id => {
+    const v = VIDEOS.find(x => x.id === id);
+    if (!v) return '';
+    return `
+      <div class="hcard" onclick="playById(${v.id}, true)" id="hcard-${v.id}" title="${v.title}">
+        <div class="hthumb">
+          ${thumbImg(thumbCache[v.id], 'hthumb-img')}
+        </div>
+        <div class="htitle">${v.title}</div>
+      </div>
+    `;
+  }).join('');
+
+  // Load thumbnails async
+  historyIds.forEach(id => {
+    const v = VIDEOS.find(x => x.id === id);
+    if (!v || thumbCache[v.id] !== undefined) return;
+    getThumb(v, url => {
+      const img = histList.querySelector(`#hcard-${id} .hthumb-img`);
+      if (img) img.src = url || PLACEHOLDER;
+    });
+  });
+}
+
+function clearHistory() {
+  historyIds = [];
+  backStack  = [];
+  backBtn.classList.remove('show');
+  renderHistory();
+}
+
+// ── AUTO ADVANCE ──────────────────────────────────────────────────
+vid.addEventListener('ended', () => {
+  const others = VIDEOS.filter(v => v.id !== curId);
+  if (others.length) playById(others[0].id, true);
+});
+
+// ── INIT: autoplay unmuted, fallback muted ─────────────────────────
+(function init() {
+  curId = START_ID;
+  const v = VIDEOS.find(x => x.id === START_ID);
+  vid.src = v.src;
+  document.getElementById('vTitle').textContent = v.title;
+  document.getElementById('vDesc').textContent  = v.desc || '';
+  document.getElementById('vMeta').textContent  = v.meta || '';
+
+  vid.play().catch(() => {
+    vid.muted = true;
+    vid.play().catch(() => {});
+    const unmute = () => { vid.muted = false; };
+    document.addEventListener('click',      unmute, {once: true});
+    document.addEventListener('touchstart', unmute, {once: true});
+  });
+
+  renderSide();
+  renderHistory();
+
+  // Pre-generate semua thumbnail di background
+  VIDEOS.forEach(v => {
+    if (thumbCache[v.id] === undefined) {
+      getThumb(v, () => {}); // cache dulu, render nanti saat dibutuhkan
+    }
+  });
+})();
+</script>
+</body>
+</html>
